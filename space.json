@@ -1,0 +1,8 @@
+{
+  "entry": "client/dist/index.html",
+  "managedCronJobs": [],
+  "name": "Houyuan Health Platform Prototype",
+  "platformVersion": 31,
+  "runtime": "typescript",
+  "slug": "kangteng-health-platform-prototype-muse"
+}

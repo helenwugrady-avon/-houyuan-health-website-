@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@import "tailwindcss-safe-area";
+
+@theme {
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 28px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+}
+
+:root {
+  color-scheme: light;
+  --bg: #f5f2ec;
+  --surface: #ffffff;
+  --surface-alt: #efe7d8;
+  --text: #1b2321;
+  --dim: #535b58;
+  --border: #e2ddd2;
+  --accent: #1d6762;
+  --deep: #123b3a;
+  --accent-light: #e3efec;
+  --green: #2e7a4f;
+  --amber: #9a6b10;
+  --red: #a63d32;
+  --radius: 12px;
+  --space-surface: var(--surface);
+  --space-surface-alt: var(--surface-alt);
+  --space-muted: var(--dim);
+  --space-border: var(--border);
+  --space-accent: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #121816;
+    --surface: #1b2422;
+    --surface-alt: #22302d;
+    --text: #e8ecea;
+    --dim: #a9b5b1;
+    --border: #2c3734;
+    --accent: #5fb3a9;
+    --accent-light: #1e3a2a;
+  }
+}
+
+@layer base {
+  button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) {
+    min-height: 2.25rem;
+  }
+  body { font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+}
