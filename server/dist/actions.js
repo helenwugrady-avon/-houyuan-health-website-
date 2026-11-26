@@ -6422,6 +6422,19 @@ var patientTeamRoles = sqliteTable("patient_team_roles", {
   patientId: text("patient_id").notNull(),
   roleKey: text("role_key").notNull()
 });
+var catchupEntries = sqliteTable("catchup_entries", {
+  id: integer2("id").primaryKey({ autoIncrement: true }),
+  patientId: text("patient_id").notNull().default(""),
+  entryType: text("entry_type").notNull(),
+  belongsDate: text("belongs_date").notNull(),
+  linkArea: text("link_area").notNull(),
+  note: text("note").notNull().default(""),
+  fileKey: text("file_key"),
+  fileName: text("file_name").notNull().default(""),
+  fileKind: text("file_kind").notNull().default(""),
+  enteredBy: text("entered_by").notNull().default(""),
+  createdAt: integer2("created_at", { mode: "timestamp_ms" }).notNull().$defaultFn(() => new Date)
+});
 var staffEntries = sqliteTable("staff_entries", {
   id: integer2("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").notNull(),
@@ -7681,7 +7694,7 @@ var Actions = {
     }
   }),
   listTeamMembers: defineAction({
-    description: "Lists the Team members (Patient Management): each real person assigned to one role and to the patient they serve in that role. The first call seeds the people Helen has named \u2014 Helen, her sister and her brother as the family role for her dad (Patient Zero), and her dad as Patient Zero \u2014 plus empty care-team slots (nurse, doctor, dietitian, therapist, health manager, aide) whose names are filled in later. Different patients can have different members.",
+    description: "Lists the Team members (Patient Management): each real person assigned to one role and to the patient they serve in that role. Roles follow the MDT structure (YH-PLAT-ORG-001): platform lead, sales consultant, records clerk, health manager, dietitian, rehab therapist, psychologist, care butler, family \u2014 plus the consulting physician from the partner hospital \u5FB7\u9633\u5FB7\u5584\u5C45\u533B\u9662\uFF0C an external contributor who does not log in. The first call seeds the people Helen has named \u2014 Helen, her sister and her brother as the family role for her dad (Patient Zero), and her dad as Patient Zero \u2014 plus empty slots for the MDT posts the org chart marks vacant \uFF08\u5F85\u8865\uFF09; names are never invented. On later calls, any MDT slot that is missing entirely is added once, empty. Different patients can have different members.",
     request: object({}),
     response: object({
       members: array(object({
@@ -7694,6 +7707,17 @@ var Actions = {
     }),
     async handler(ctx) {
       const db = ctx.db();
+      const mdtSlots = [
+        { name: "", roleKey: "lead", patientId: "", note: "\u8FD0\u8425\u8D1F\u8D23\u4EBA\u672C\u4EBA The operations lead \xB7 \u5728\u5C97 In post" },
+        { name: "", roleKey: "sales", patientId: "", note: "\u8FD0\u8425\u8D1F\u8D23\u4EBA\u517C Held by the operations lead for now \xB7 \u5F85\u8865 Vacant" },
+        { name: "", roleKey: "clerk", patientId: "", note: "\u751F\u6D3B\u7BA1\u5BB6\u517C Covered by the care butler for now \xB7 \u5F85\u8865 Vacant" },
+        { name: "", roleKey: "manager", patientId: "", note: "\u865A\u4F4D\u5F85\u8865 Vacant \u2014 to fill in" },
+        { name: "", roleKey: "dietitian", patientId: "", note: "\u865A\u4F4D\u5F85\u8865 Vacant \u2014 to fill in\uFF08\u53EF\u517C\u804C Part-time possible\uFF09" },
+        { name: "", roleKey: "exercise", patientId: "", note: "\u865A\u4F4D\u5F85\u8865 Vacant \u2014 to fill in\uFF08\u53EF\u517C\u804C Part-time possible\uFF09" },
+        { name: "", roleKey: "counselor", patientId: "", note: "\u865A\u4F4D\u5F85\u8865 Vacant \u2014 to fill in\uFF08\u53EF\u517C\u804C Part-time possible\uFF09" },
+        { name: "", roleKey: "aide", patientId: "", note: "\u865A\u4F4D\u5F85\u8865 Vacant \u2014 to fill in" },
+        { name: "", roleKey: "physician", patientId: "", note: "\u5FB7\u9633\u5FB7\u5584\u5C45\u533B\u9662\uFF08\u5408\u4F5C\u533B\u9662\uFF09\xB7 \u5916\u90E8\u4F1A\u8BCA\u533B\u5E08\uFF0C\u4E0D\u767B\u5F55\u7CFB\u7EDF \u2014 \u4E66\u9762\u610F\u89C1\u7531\u6863\u6848\u5F55\u5165\u5458\u4E0A\u4F20\u5F52\u6863 Partner hospital \u2014 external consultant, does not log in; written opinions are uploaded by the records clerk" }
+      ];
       const existing = await db.select().from(teamMembers).orderBy(asc(teamMembers.id));
       if (existing.length === 0) {
         const seed = [
@@ -7701,14 +7725,18 @@ var Actions = {
           { name: "\u59D0\u59D0 Sister", roleKey: "family", patientId: "patient-zero", note: "\u5BB6\u4EBA Family \u2014 \u771F\u540D\u5F85\u586B Real name to fill in" },
           { name: "\u54E5\u54E5 Brother", roleKey: "family", patientId: "patient-zero", note: "\u5BB6\u4EBA Family \u2014 \u771F\u540D\u5F85\u586B Real name to fill in" },
           { name: "\u7238\u7238 Dad", roleKey: "patient", patientId: "patient-zero", note: "Patient Zero \xB7 \u7B2C\u4E00\u4F4D\u60A3\u8005 First patient" },
-          { name: "", roleKey: "nurse", patientId: "", note: "" },
-          { name: "", roleKey: "doctor", patientId: "", note: "" },
-          { name: "", roleKey: "dietitian", patientId: "", note: "" },
-          { name: "", roleKey: "exercise", patientId: "", note: "" },
-          { name: "", roleKey: "manager", patientId: "", note: "" },
-          { name: "", roleKey: "aide", patientId: "", note: "" }
+          ...mdtSlots
         ];
         for (const s of seed) {
+          await db.insert(teamMembers).values(s);
+        }
+        const rows = await db.select().from(teamMembers).orderBy(asc(teamMembers.id));
+        return { members: rows.map((r) => ({ id: r.id, name: r.name, roleKey: r.roleKey, patientId: r.patientId, note: r.note })) };
+      }
+      const have = new Set(existing.map((m) => m.roleKey));
+      const missing = mdtSlots.filter((s) => !have.has(s.roleKey));
+      if (missing.length > 0) {
+        for (const s of missing) {
           await db.insert(teamMembers).values(s);
         }
         const rows = await db.select().from(teamMembers).orderBy(asc(teamMembers.id));
@@ -7752,7 +7780,7 @@ var Actions = {
     }
   }),
   listPatientTeamRoles: defineAction({
-    description: "Lists which roles are on each patient's team (patient_id + role_key pairs). Choosing a role for a patient brings that role's task list for that patient. Patient Zero starts with all seven roles (family, nurse, doctor, dietitian, therapist, health manager, aide) \u2014 the structure of his care plan; other patients start with none chosen.",
+    description: "Lists which roles are on each patient's team (patient_id + role_key pairs). Choosing a role for a patient brings that role's task list for that patient. Patient Zero starts with the MDT roles from the org chart (family, health manager, dietitian, rehab therapist, psychologist, care butler, consulting physician) \u2014 the structure of his care plan; other patients start with none chosen. On an existing database, the psychologist and consulting-physician roles are added to Patient Zero's team once if neither is there yet.",
     request: object({}),
     response: object({
       pairs: array(object({ patientId: string2(), roleKey: string2() }))
@@ -7761,8 +7789,16 @@ var Actions = {
       const db = ctx.db();
       const existing = await db.select().from(patientTeamRoles).orderBy(asc(patientTeamRoles.id));
       if (existing.length === 0) {
-        const roles = ["family", "nurse", "doctor", "dietitian", "exercise", "manager", "aide"];
+        const roles = ["family", "manager", "dietitian", "exercise", "counselor", "aide", "physician"];
         for (const roleKey of roles) {
+          await db.insert(patientTeamRoles).values({ patientId: "patient-zero", roleKey });
+        }
+        const rows = await db.select().from(patientTeamRoles).orderBy(asc(patientTeamRoles.id));
+        return { pairs: rows.map((r) => ({ patientId: r.patientId, roleKey: r.roleKey })) };
+      }
+      const pzRoles = new Set(existing.filter((r) => r.patientId === "patient-zero").map((r) => r.roleKey));
+      if (!pzRoles.has("counselor") && !pzRoles.has("physician")) {
+        for (const roleKey of ["counselor", "physician"]) {
           await db.insert(patientTeamRoles).values({ patientId: "patient-zero", roleKey });
         }
         const rows = await db.select().from(patientTeamRoles).orderBy(asc(patientTeamRoles.id));
@@ -8382,6 +8418,97 @@ var Actions = {
           return { id: r.id, clientName: r.clientName, packageLabel: r.packageLabel, packagePrice: r.packagePrice, services, note: r.note, createdAt: r.createdAt.toISOString() };
         })
       };
+    }
+  }),
+  listCatchupEntries: defineAction({
+    description: "Lists catch-up entries from the Catch-up entries page \uFF08\u8865\u5F55\u4E2D\u5FC3\uFF09: missed entries filed in one central place \u2014 patient, type (prescription, lab report, daily care sheet, exercise / nutrition / sleep / brain-training record, assessment form, physician's written opinion, other), the date the entry belongs to (may be in the past), the service/area it links to, an optional uploaded file, a short note, and who entered it. The destination screens read these same rows filtered by link area, so a filed item also appears in its proper place \u2014 one record, never a copy.",
+    request: object({}),
+    response: object({
+      entries: array(object({
+        id: number2(),
+        patientId: string2(),
+        entryType: string2(),
+        belongsDate: string2(),
+        linkArea: string2(),
+        note: string2(),
+        fileUrl: string2().nullable(),
+        fileName: string2(),
+        fileKind: string2(),
+        enteredBy: string2(),
+        createdAt: string2()
+      }))
+    }),
+    async handler(ctx) {
+      const db = ctx.db();
+      const rows = await db.select().from(catchupEntries).orderBy(desc(catchupEntries.id)).limit(200);
+      return {
+        entries: await Promise.all(rows.map(async (r) => ({
+          id: r.id,
+          patientId: r.patientId,
+          entryType: r.entryType,
+          belongsDate: r.belongsDate,
+          linkArea: r.linkArea,
+          note: r.note,
+          fileUrl: r.fileKey && r.fileKind === "photo" ? await ctx.blobs.getUrl(r.fileKey) : null,
+          fileName: r.fileName,
+          fileKind: r.fileKind,
+          enteredBy: r.enteredBy,
+          createdAt: r.createdAt.toISOString()
+        })))
+      };
+    }
+  }),
+  saveCatchupEntry: defineAction({
+    description: "Files one catch-up entry in the Catch-up entries page \uFF08\u8865\u5F55\u4E2D\u5FC3\uFF09: the patient it belongs to, what it is, the date the entry belongs to (today or any earlier date \u2014 this page exists for missed entries), the service/area it links to so it also shows in its proper place, a short note, who entered it, and optionally one uploaded file \u2014 a JPG/PNG photo, a PDF file, or an Excel file, stored as an owned blob and kept attached to the entry.",
+    request: object({
+      patientId: string2().max(40).default(""),
+      entryType: _enum(["prescription", "lab", "care", "exercise", "nutrition", "sleep", "brain", "assessment", "opinion", "other"]),
+      belongsDate: string2().min(10).max(10),
+      linkArea: _enum(["meds", "exercise", "today", "record", "entry"]),
+      note: string2().max(1000).default(""),
+      upload: uploadShape.nullable().default(null),
+      enteredBy: string2().max(120).default("")
+    }),
+    response: object({ ok: literal(true), id: number2() }),
+    async handler(ctx, args) {
+      const db = ctx.db();
+      let fileKey = null;
+      let fileName = "";
+      let fileKind = "";
+      if (args.upload) {
+        const stored = await storeUpload(ctx, "catchup-files", args.upload);
+        fileKey = stored.key;
+        fileKind = stored.kind;
+        fileName = args.upload.fileName.trim() || (stored.kind === "photo" ? "\u8865\u5F55\u7167\u7247 Catch-up photo" : stored.kind === "pdf" ? "\u8865\u5F55\u6587\u4EF6 PDF Catch-up PDF" : "\u8865\u5F55\u8868\u683C Catch-up spreadsheet");
+      }
+      const inserted = await db.insert(catchupEntries).values({
+        patientId: args.patientId,
+        entryType: args.entryType,
+        belongsDate: args.belongsDate,
+        linkArea: args.linkArea,
+        note: args.note,
+        fileKey,
+        fileName,
+        fileKind,
+        enteredBy: args.enteredBy
+      }).returning({ id: catchupEntries.id });
+      ctx.invalidateQueries();
+      return { ok: true, id: inserted[0]?.id ?? 0 };
+    }
+  }),
+  deleteCatchupEntry: defineAction({
+    description: "Removes one catch-up entry (and its uploaded file) from the Catch-up entries page.",
+    request: object({ id: number2().int().positive() }),
+    response: object({ ok: literal(true) }),
+    async handler(ctx, args) {
+      const db = ctx.db();
+      const existing = (await db.select().from(catchupEntries).where(eq(catchupEntries.id, args.id)))[0];
+      if (existing?.fileKey) {
+        await ctx.blobs.delete(existing.fileKey);
+      }
+      await db.delete(catchupEntries).where(eq(catchupEntries.id, args.id));
+      ctx.invalidateQueries();
+      return { ok: true };
     }
   })
 };

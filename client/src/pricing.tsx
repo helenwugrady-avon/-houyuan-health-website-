@@ -3,6 +3,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./api";
 import { actionFields } from "@hatch/space-sdk/fields" with { type: "macro" };
 import type { Actions } from "../../server/src/actions";
+import { T, LANG } from "./lang";
+import { Dismissible } from "./ui";
+
+/* Display helper for legacy combined strings ("套餐 Packages", saved
+   selection labels, source notes): shows only the current language's half.
+   Stored values and prices never change. */
+function L(combined: string): string {
+  let last = -1;
+  for (let i = 0; i < combined.length; i++) { const c = combined.charCodeAt(i); if (c >= 0x4e00 && c <= 0x9fff) last = i; }
+  if (last < 0) return combined;
+  let end = last + 1;
+  while (end < combined.length && "\uFF09\u3011\u300B%".includes(combined[end] ?? "")) end++;
+  const zh = combined.slice(0, end).trim();
+  const en = combined.slice(end).replace(/^[\u3001,\uFF0C\u00B7\s]+/, "").trim();
+  if (!en || !/[A-Za-z]/.test(en)) return combined;
+  return LANG === "zh" ? zh : en;
+}
 
 const FIELDS = actionFields<typeof Actions>();
 
@@ -138,6 +155,57 @@ export const PRICE_SECTIONS: PriceSection[] = [
 ];
 
 const ALL_ROWS: PriceRow[] = [...PRICE_SECTIONS.flatMap((s) => s.rows)];
+export { ALL_ROWS as ALL_PRICE_ROWS };
+export type { PriceRow };
+
+/* Which MDT post delivers each service — the link between the price table
+   and the org chart (YH-PLAT-ORG-001). Attributions follow the price
+   files' own notes (0821's sheets are organised by post: 营养 / 康复 /
+   心理睡眠 / 健康管理师 / 居家护理）. Services with no single delivering
+   post (partner referrals, external classes) are simply absent here and
+   show no role. */
+export const SERVICE_ROLE: Record<string, string> = {
+  "svc-morning": "aide", "svc-meals": "aide", "svc-cooking": "family",
+  "svc-protein": "dietitian", "svc-seated": "exercise", "svc-standing": "exercise",
+  "svc-brain": "counselor", "svc-sleep": "counselor", "svc-meds": "aide",
+  "svc-check": "aide", "svc-night": "family", "svc-weight": "aide", "svc-report": "manager",
+  "svc-standcheck": "exercise", "svc-nutrition": "dietitian", "svc-cogrec": "counselor",
+  "svc-followup": "manager", "svc-vitals": "exercise", "svc-quest": "counselor",
+  "svc-scan": "exercise", "svc-labs": "physician", "svc-medlist": "clerk",
+  "svc-assess": "manager", "svc-signup": "sales", "svc-talks": "manager",
+  "svc-familyteach": "manager", "svc-pain": "exercise", "svc-logday": "patient",
+  "svc-mini": "patient", "svc-familynotes": "family", "svc-journal": "manager",
+  "svc-devices": "lead", "svc-taichi": "exercise", "svc-cookingclass": "dietitian",
+  "svc-onlinedoc": "physician",
+  "svc-page-safety": "lead", "svc-page-public": "lead", "svc-page-data": "lead", "svc-page-progress": "lead",
+};
+
+const PRICE_ROLE_LABELS: Record<string, { zh: string; en: string }> = {
+  lead: { zh: "平台总负责人", en: "Platform lead" },
+  sales: { zh: "销售顾问", en: "Sales consultant" },
+  clerk: { zh: "档案录入员", en: "Records clerk" },
+  manager: { zh: "健康管理师", en: "Health manager" },
+  dietitian: { zh: "营养师", en: "Dietitian" },
+  exercise: { zh: "运动康复师", en: "Rehab therapist" },
+  counselor: { zh: "心理咨询师", en: "Psychologist" },
+  physician: { zh: "合作会诊医师（外部）", en: "Consulting physician (external)" },
+  aide: { zh: "生活管家", en: "Care butler" },
+  family: { zh: "家人", en: "Family" },
+  patient: { zh: "患者本人", en: "The patient" },
+};
+export function serviceRoleLabel(roleKey: string | undefined): string {
+  if (!roleKey) return "";
+  const r = PRICE_ROLE_LABELS[roleKey];
+  return r ? T(r.zh, r.en) : roleKey;
+}
+/** The priced services one MDT post delivers (packages excluded). */
+export function servicesForRole(roleKey: string): PriceRow[] {
+  return ALL_ROWS.filter((r) => !r.key.startsWith("pkg-") && SERVICE_ROLE[r.key] === roleKey);
+}
+/** One-language display of a stored price string. */
+export function priceDisplay(combined: string): string {
+  return L(combined);
+}
 const SELECTABLE_SERVICES: PriceRow[] = ALL_ROWS.filter((r) => r.selectable && !r.key.startsWith("pkg-"));
 const SERVICE_SECTIONS: PriceSection[] = PRICE_SECTIONS
   .map((s) => ({ ...s, rows: s.rows.filter((r) => r.selectable && !r.key.startsWith("pkg-")) }))
@@ -147,7 +215,7 @@ function StatusChip({ status }: { status: PriceStatus }) {
   const m = STATUS_META[status];
   return (
     <span className="inline-block shrink-0 rounded-full px-2 py-0.5 text-xs font-bold" style={{ color: m.color, background: m.bg }}>
-      {m.zh} {m.en}
+      {T(m.zh, m.en)}
     </span>
   );
 }
@@ -197,11 +265,11 @@ export function PricingPanel() {
       note: note.trim(),
     }),
     onSuccess: () => {
-      setMsg("已保存 — 客户的选择在下方列表里，团队都能看到。Saved — the client's choices are in the list below for the team.");
+      setMsg(T("已保存 — 客户的选择在下方列表里，团队都能看到。", "Saved — the client's choices are in the list below for the team."));
       setPkgKey(""); setPicked([]); setClientName(""); setNote("");
       void queryClient.invalidateQueries({ queryKey: ["pricingSelections"] });
     },
-    onError: (e) => setMsg(`保存失败 Save failed: ${e instanceof Error ? e.message : String(e)}`),
+    onError: (e) => setMsg(`${T("保存失败", "Save failed")}: ${e instanceof Error ? e.message : String(e)}`),
   });
 
   const toggleService = (key: string) =>
@@ -209,29 +277,29 @@ export function PricingPanel() {
 
   return (
     <div className="space-y-4">
-      <PCard title="第一步 · 选一个套餐 Step 1 — choose a package">
+      <PCard title={T("第一步 · 选一个套餐", "Step 1 — choose a package")}>
         <div className="grid gap-2 sm:grid-cols-2">
           <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--border)] p-3">
             <input type="radio" name="price-package" className="mt-1 h-4 w-4 shrink-0" checked={pkgKey === ""} onChange={() => setPkgKey("")} />
-            <span className="text-sm"><span className="font-semibold">不选套餐，只选单项</span><br /><span className="text-[var(--dim)]">No package — individual services only</span></span>
+            <span className="text-sm"><span className="font-semibold">{T("不选套餐，只选单项", "No package — individual services only")}</span></span>
           </label>
           {PRICE_PACKAGES.map((p) => (
             <label key={p.key} className="flex cursor-pointer items-start gap-2 rounded-lg border p-3" style={pkgKey === p.key ? { borderColor: TEAL, background: "#e3efec" } : { borderColor: "var(--border)" }}>
               <input type="radio" name="price-package" className="mt-1 h-4 w-4 shrink-0" checked={pkgKey === p.key} onChange={() => setPkgKey(p.key)} />
               <span className="text-sm">
-                <span className="font-semibold">{p.zh}</span> <span className="text-[var(--dim)]">{p.en}</span>
-                <br /><span className="font-bold" style={{ color: TEAL }}>{p.price}</span>
+                <span className="font-semibold">{T(p.zh, p.en)}</span>
+                <br /><span className="font-bold" style={{ color: TEAL }}>{L(p.price)}</span>
               </span>
             </label>
           ))}
         </div>
       </PCard>
 
-      <PCard title="第二步 · 加选单项服务 Step 2 — add individual services">
+      <PCard title={T("第二步 · 加选单项服务", "Step 2 — add individual services")}>
         <div className="space-y-4">
           {SERVICE_SECTIONS.map((s) => (
             <div key={s.zh}>
-              <p className="mb-1.5 text-sm font-bold" style={{ color: TEAL }}>{s.zh} <span className="font-normal text-[var(--dim)]">{s.en}</span></p>
+              <p className="mb-1.5 text-sm font-bold" style={{ color: TEAL }}>{T(s.zh, s.en)}</p>
               <div className="grid gap-2 sm:grid-cols-2">
                 {s.rows.map((r) => {
                   const on = picked.includes(r.key);
@@ -239,8 +307,8 @@ export function PricingPanel() {
                     <label key={r.key} className="flex cursor-pointer items-start gap-2 rounded-lg border p-3" style={on ? { borderColor: TEAL, background: "#e3efec" } : { borderColor: "var(--border)" }}>
                       <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={on} onChange={() => toggleService(r.key)} aria-label={`Add ${r.en}`} />
                       <span className="text-sm">
-                        <span className="font-semibold">{r.zh}</span> <span className="text-[var(--dim)]">{r.en}</span>
-                        <br /><span className="font-bold" style={{ color: TEAL }}>{r.price}</span>
+                        <span className="font-semibold">{T(r.zh, r.en)}</span>
+                        <br /><span className="font-bold" style={{ color: TEAL }}>{L(r.price)}</span>
                         {r.status === "free" ? <span className="ml-2"><StatusChip status="free" /></span> : null}
                       </span>
                     </label>
@@ -252,63 +320,63 @@ export function PricingPanel() {
         </div>
       </PCard>
 
-      <PCard title="已选与合计 Your choices">
+      <PCard title={T("已选与合计", "Your choices")}>
         {!hasChoice ? (
-          <p className="text-sm text-[var(--dim)]">还没有选择 — 在上面选一个套餐，或勾选单项服务，这里会列出所选内容和合计。Nothing chosen yet — pick a package or tick services above and they appear here with a total.</p>
+          <p className="text-sm text-[var(--dim)]">{T("还没有选择 — 在上面选一个套餐，或勾选单项服务，这里会列出所选内容和合计。", "Nothing chosen yet — pick a package or tick services above and they appear here with a total.")}</p>
         ) : (
           <ul className="space-y-1.5 text-sm">
             {pkg ? (
               <li className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--border)] pb-1.5">
-                <span><span className="font-semibold">{pkg.zh}</span> <span className="text-[var(--dim)]">{pkg.en}</span> <span className="ml-1 rounded-full bg-[#e3efec] px-2 py-0.5 text-xs font-bold" style={{ color: TEAL }}>套餐 Package</span></span>
-                <span className="font-bold">{pkg.price}</span>
+                <span><span className="font-semibold">{T(pkg.zh, pkg.en)}</span> <span className="ml-1 rounded-full bg-[#e3efec] px-2 py-0.5 text-xs font-bold" style={{ color: TEAL }}>{T("套餐", "Package")}</span></span>
+                <span className="font-bold">{L(pkg.price)}</span>
               </li>
             ) : null}
             {pickedRows.map((r) => (
               <li key={r.key} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--border)] pb-1.5">
-                <span><span className="font-semibold">{r.zh}</span> <span className="text-[var(--dim)]">{r.en}</span></span>
-                <span className="font-bold">{r.price}</span>
+                <span><span className="font-semibold">{T(r.zh, r.en)}</span></span>
+                <span className="font-bold">{L(r.price)}</span>
               </li>
             ))}
           </ul>
         )}
         {hasChoice ? (
           <p className="mt-3 text-base">
-            合计估算 Estimated total: <span className="text-xl font-bold" style={{ color: TEAL }}>{anyFrom ? "约 " : ""}¥{total.toLocaleString("zh-CN")}{anyFrom ? " 起" : ""}</span>
-            <span className="ml-2 text-xs text-[var(--dim)]">月卡 / 年卡按周期收费，单项按次或按月收费 — 合计是把所选各项加在一起的估算。Cards bill per month or year and services per visit or month; the total simply adds the chosen items together.</span>
+            {T("合计估算：", "Estimated total: ")}<span className="text-xl font-bold" style={{ color: TEAL }}>{anyFrom ? T("约 ", "about ") : ""}¥{total.toLocaleString(LANG === "zh" ? "zh-CN" : "en-GB")}{anyFrom ? T(" 起", "+") : ""}</span>
+            <span className="ml-2 text-xs text-[var(--dim)]">{T("月卡 / 年卡按周期收费，单项按次或按月收费 — 合计是把所选各项加在一起的估算。", "Cards bill per month or year and services per visit or month; the total simply adds the chosen items together.")}</span>
           </p>
         ) : null}
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm">客户姓名 Client name
-            <input {...FIELDS.savePricingSelection.clientName} aria-label="Client name" className={INP} value={clientName} onChange={(e) => { setClientName(e.target.value); setNameError(""); }} placeholder="例如：王阿姨 e.g. Mrs Wang" />
+          <label className="block text-sm">{T("客户姓名", "Client name")}
+            <input {...FIELDS.savePricingSelection.clientName} aria-label="Client name" className={INP} value={clientName} onChange={(e) => { setClientName(e.target.value); setNameError(""); }} placeholder={T("例如：王阿姨", "e.g. Mrs Wang")} />
             {nameError ? <span className="mt-1 block text-xs" style={{ color: RED }}>{nameError}</span> : null}
           </label>
-          <label className="block text-sm">备注 Note
-            <input {...FIELDS.savePricingSelection.note} aria-label="Selection note" className={INP} value={note} onChange={(e) => setNote(e.target.value)} placeholder="可选 Optional" />
+          <label className="block text-sm">{T("备注", "Note")}
+            <input {...FIELDS.savePricingSelection.note} aria-label="Selection note" className={INP} value={note} onChange={(e) => setNote(e.target.value)} placeholder={T("可选", "Optional")} />
           </label>
         </div>
         <button type="button" disabled={save.isPending || !hasChoice}
           className="mt-3 rounded-lg px-5 py-2.5 font-semibold text-white disabled:opacity-50" style={{ background: TEAL }}
           onClick={() => {
-            if (!clientName.trim()) { setNameError("请先填客户姓名，再保存。Please fill in the client's name first."); return; }
+            if (!clientName.trim()) { setNameError(T("请先填客户姓名，再保存。", "Please fill in the client's name first.")); return; }
             save.mutate();
           }}>
-          {save.isPending ? "保存中… Saving…" : "保存客户选择 Save this client's choices"}
+          {save.isPending ? T("保存中…", "Saving…") : T("保存客户选择", "Save this client's choices")}
         </button>
         {msg ? <p className="mt-2 text-sm" role="status">{msg}</p> : null}
         {selections.length > 0 ? (
           <div className="mt-4 border-t border-[var(--border)] pt-3">
-            <p className="mb-2 text-sm font-bold" style={{ color: TEAL }}>已保存的客户选择 Saved client choices</p>
+            <p className="mb-2 text-sm font-bold" style={{ color: TEAL }}>{T("已保存的客户选择", "Saved client choices")}</p>
             <ul className="space-y-2">
               {selections.map((s) => (
                 <li key={s.id} className="rounded-lg border border-[var(--border)] p-3 text-sm">
-                  <p><span className="font-semibold">{s.clientName || "（未填姓名）"}</span> <span className="text-xs text-[var(--dim)]">{new Date(s.createdAt).toLocaleString("zh-CN")}</span></p>
-                  {s.packageLabel ? <p className="mt-0.5">套餐 Package: {s.packageLabel} — <span className="font-semibold">{s.packagePrice}</span></p> : null}
+                  <p><span className="font-semibold">{s.clientName || T("（未填姓名）", "(no name)")}</span> <span className="text-xs text-[var(--dim)]">{new Date(s.createdAt).toLocaleString(LANG === "zh" ? "zh-CN" : "en-GB")}</span></p>
+                  {s.packageLabel ? <p className="mt-0.5">{T("套餐：", "Package: ")}{L(s.packageLabel)} — <span className="font-semibold">{L(s.packagePrice)}</span></p> : null}
                   {s.services.length > 0 ? (
                     <ul className="mt-0.5 list-disc pl-5">
-                      {s.services.map((sv, i) => (<li key={i}>{sv.label} — {sv.price}</li>))}
+                      {s.services.map((sv, i) => (<li key={i}>{L(sv.label)} — {L(sv.price)}</li>))}
                     </ul>
                   ) : null}
-                  {s.note ? <p className="mt-0.5 text-[var(--dim)]">备注：{s.note}</p> : null}
+                  {s.note ? <p className="mt-0.5 text-[var(--dim)]">{T("备注：", "Note: ")}{s.note}</p> : null}
                 </li>
               ))}
             </ul>
@@ -316,16 +384,16 @@ export function PricingPanel() {
         ) : null}
       </PCard>
 
-      <PCard title="全部服务价格对照 Full price list — matched & unmatched">
-        <p className="mb-3 flex flex-wrap gap-1.5 text-sm">
+      <PCard title={T("全部服务价格对照", "Full price list — matched & unmatched")}>
+        <Dismissible className="pr-8"><p className="mb-3 flex flex-wrap gap-1.5 text-sm">
           {(Object.keys(STATUS_META) as PriceStatus[]).map((k) => (
             <span key={k}><StatusChip status={k} /> <span className="font-semibold">{counts[k]}</span></span>
           ))}
-          <span className="text-[var(--dim)]">共 {ALL_ROWS.length} 项 · 定价依据：0820 操作手册 + 0821 定稿价目表（2026-11-25 决定）</span>
-        </p>
+          <span className="text-[var(--dim)]">{T(`共 ${ALL_ROWS.length} 项 · 定价依据：0820 操作手册 + 0821 定稿价目表（2026-11-25 决定）`, `${ALL_ROWS.length} items · Pricing basis: the 0820 playbook + 0821 final price table (decided 2026-11-25)`)}</span>
+        </p></Dismissible>
         <div className="mb-3 flex gap-2" role="group" aria-label="Price list filter">
-          <button type="button" aria-pressed={filter === "all"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${filter === "all" ? "text-white" : "border border-[var(--border)]"}`} style={filter === "all" ? { background: TEAL } : { color: TEAL }} onClick={() => setFilter("all")}>全部 All</button>
-          <button type="button" aria-pressed={filter === "unmatched"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${filter === "unmatched" ? "text-white" : "border border-[var(--border)]"}`} style={filter === "unmatched" ? { background: TEAL } : { color: TEAL }} onClick={() => setFilter("unmatched")}>只看未匹配 Unmatched only</button>
+          <button type="button" aria-pressed={filter === "all"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${filter === "all" ? "text-white" : "border border-[var(--border)]"}`} style={filter === "all" ? { background: TEAL } : { color: TEAL }} onClick={() => setFilter("all")}>{T("全部", "All")}</button>
+          <button type="button" aria-pressed={filter === "unmatched"} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${filter === "unmatched" ? "text-white" : "border border-[var(--border)]"}`} style={filter === "unmatched" ? { background: TEAL } : { color: TEAL }} onClick={() => setFilter("unmatched")}>{T("只看未匹配", "Unmatched only")}</button>
         </div>
         <div className="space-y-5">
           {PRICE_SECTIONS.map((s) => {
@@ -333,18 +401,18 @@ export function PricingPanel() {
             if (rows.length === 0) return null;
             return (
               <div key={s.zh}>
-                <p className="mb-1 text-sm font-bold" style={{ color: TEAL }}>{s.zh} <span className="font-normal text-[var(--dim)]">{s.en}</span></p>
+                <p className="mb-1 text-sm font-bold" style={{ color: TEAL }}>{T(s.zh, s.en)}</p>
                 <ul>
                   {rows.map((r) => (
                     <li key={r.key} className="border-b border-[var(--border)] py-2.5">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="text-sm font-semibold">{r.zh}</span>
-                        <span className="text-xs text-[var(--dim)]">{r.en}</span>
+                        <span className="text-sm font-semibold">{T(r.zh, r.en)}</span>
                         <StatusChip status={r.status} />
-                        <span className="ml-auto text-sm font-bold" style={{ color: r.status === "noprice" || r.status === "toset" ? STATUS_META[r.status].color : TEAL }}>{r.price}</span>
+                        <span className="ml-auto text-sm font-bold" style={{ color: r.status === "noprice" || r.status === "toset" ? STATUS_META[r.status].color : TEAL }}>{L(r.price)}</span>
                       </div>
-                      <p className="mt-0.5 text-xs text-[var(--dim)]">网站页面 Page: {r.page}</p>
-                      <p className="mt-0.5 text-xs text-[var(--dim)]">{r.doc}</p>
+                      <p className="mt-0.5 text-xs text-[var(--dim)]">{T("网站页面：", "Page: ")}{L(r.page)}</p>
+                      {SERVICE_ROLE[r.key] ? <p className="mt-0.5 text-xs text-[var(--dim)]">{T("提供角色：", "Provided by: ")}<span className="font-semibold" style={{ color: TEAL }}>{serviceRoleLabel(SERVICE_ROLE[r.key])}</span></p> : null}
+                      <p className="mt-0.5 text-xs text-[var(--dim)]">{L(r.doc)}</p>
                     </li>
                   ))}
                 </ul>
@@ -352,7 +420,7 @@ export function PricingPanel() {
             );
           })}
           {filter === "unmatched" && PRICE_SECTIONS.every((s) => s.rows.every((r) => r.status !== "noprice" && r.status !== "toset")) ? (
-            <p className="text-sm text-[var(--dim)]">全部已匹配。Everything is matched.</p>
+            <p className="text-sm text-[var(--dim)]">{T("全部已匹配。", "Everything is matched.")}</p>
           ) : null}
         </div>
       </PCard>

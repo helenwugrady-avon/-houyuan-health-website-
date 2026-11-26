@@ -1147,7 +1147,7 @@ export const Actions = {
   }),
 
   listTeamMembers: defineAction({
-    description: "Lists the Team members (Patient Management): each real person assigned to one role and to the patient they serve in that role. The first call seeds the people Helen has named — Helen, her sister and her brother as the family role for her dad (Patient Zero), and her dad as Patient Zero — plus empty care-team slots (nurse, doctor, dietitian, therapist, health manager, aide) whose names are filled in later. Different patients can have different members.",
+    description: "Lists the Team members (Patient Management): each real person assigned to one role and to the patient they serve in that role. Roles follow the MDT structure (YH-PLAT-ORG-001): platform lead, sales consultant, records clerk, health manager, dietitian, rehab therapist, psychologist, care butler, family — plus the consulting physician from the partner hospital 德阳德善居医院， an external contributor who does not log in. The first call seeds the people Helen has named — Helen, her sister and her brother as the family role for her dad (Patient Zero), and her dad as Patient Zero — plus empty slots for the MDT posts the org chart marks vacant （待补）; names are never invented. On later calls, any MDT slot that is missing entirely is added once, empty. Different patients can have different members.",
     request: z.object({}),
     response: z.object({
       members: z.array(z.object({
@@ -1156,6 +1156,17 @@ export const Actions = {
     }),
     async handler(ctx) {
       const db = ctx.db<typeof schema>();
+      const mdtSlots: { name: string; roleKey: string; patientId: string; note: string }[] = [
+        { name: "", roleKey: "lead", patientId: "", note: "运营负责人本人 The operations lead · 在岗 In post" },
+        { name: "", roleKey: "sales", patientId: "", note: "运营负责人兼 Held by the operations lead for now · 待补 Vacant" },
+        { name: "", roleKey: "clerk", patientId: "", note: "生活管家兼 Covered by the care butler for now · 待补 Vacant" },
+        { name: "", roleKey: "manager", patientId: "", note: "虚位待补 Vacant — to fill in" },
+        { name: "", roleKey: "dietitian", patientId: "", note: "虚位待补 Vacant — to fill in（可兼职 Part-time possible）" },
+        { name: "", roleKey: "exercise", patientId: "", note: "虚位待补 Vacant — to fill in（可兼职 Part-time possible）" },
+        { name: "", roleKey: "counselor", patientId: "", note: "虚位待补 Vacant — to fill in（可兼职 Part-time possible）" },
+        { name: "", roleKey: "aide", patientId: "", note: "虚位待补 Vacant — to fill in" },
+        { name: "", roleKey: "physician", patientId: "", note: "德阳德善居医院（合作医院）· 外部会诊医师，不登录系统 — 书面意见由档案录入员上传归档 Partner hospital — external consultant, does not log in; written opinions are uploaded by the records clerk" },
+      ];
       const existing = await db.select().from(schema.teamMembers).orderBy(asc(schema.teamMembers.id));
       if (existing.length === 0) {
         const seed: { name: string; roleKey: string; patientId: string; note: string }[] = [
@@ -1163,14 +1174,16 @@ export const Actions = {
           { name: "姐姐 Sister", roleKey: "family", patientId: "patient-zero", note: "家人 Family — 真名待填 Real name to fill in" },
           { name: "哥哥 Brother", roleKey: "family", patientId: "patient-zero", note: "家人 Family — 真名待填 Real name to fill in" },
           { name: "爸爸 Dad", roleKey: "patient", patientId: "patient-zero", note: "Patient Zero · 第一位患者 First patient" },
-          { name: "", roleKey: "nurse", patientId: "", note: "" },
-          { name: "", roleKey: "doctor", patientId: "", note: "" },
-          { name: "", roleKey: "dietitian", patientId: "", note: "" },
-          { name: "", roleKey: "exercise", patientId: "", note: "" },
-          { name: "", roleKey: "manager", patientId: "", note: "" },
-          { name: "", roleKey: "aide", patientId: "", note: "" },
+          ...mdtSlots,
         ];
         for (const s of seed) { await db.insert(schema.teamMembers).values(s); }
+        const rows = await db.select().from(schema.teamMembers).orderBy(asc(schema.teamMembers.id));
+        return { members: rows.map((r) => ({ id: r.id, name: r.name, roleKey: r.roleKey, patientId: r.patientId, note: r.note })) };
+      }
+      const have = new Set(existing.map((m) => m.roleKey));
+      const missing = mdtSlots.filter((s) => !have.has(s.roleKey));
+      if (missing.length > 0) {
+        for (const s of missing) { await db.insert(schema.teamMembers).values(s); }
         const rows = await db.select().from(schema.teamMembers).orderBy(asc(schema.teamMembers.id));
         return { members: rows.map((r) => ({ id: r.id, name: r.name, roleKey: r.roleKey, patientId: r.patientId, note: r.note })) };
       }
@@ -1215,7 +1228,7 @@ export const Actions = {
   }),
 
   listPatientTeamRoles: defineAction({
-    description: "Lists which roles are on each patient's team (patient_id + role_key pairs). Choosing a role for a patient brings that role's task list for that patient. Patient Zero starts with all seven roles (family, nurse, doctor, dietitian, therapist, health manager, aide) — the structure of his care plan; other patients start with none chosen.",
+    description: "Lists which roles are on each patient's team (patient_id + role_key pairs). Choosing a role for a patient brings that role's task list for that patient. Patient Zero starts with the MDT roles from the org chart (family, health manager, dietitian, rehab therapist, psychologist, care butler, consulting physician) — the structure of his care plan; other patients start with none chosen. On an existing database, the psychologist and consulting-physician roles are added to Patient Zero's team once if neither is there yet.",
     request: z.object({}),
     response: z.object({
       pairs: z.array(z.object({ patientId: z.string(), roleKey: z.string() })),
@@ -1224,8 +1237,14 @@ export const Actions = {
       const db = ctx.db<typeof schema>();
       const existing = await db.select().from(schema.patientTeamRoles).orderBy(asc(schema.patientTeamRoles.id));
       if (existing.length === 0) {
-        const roles = ["family", "nurse", "doctor", "dietitian", "exercise", "manager", "aide"];
+        const roles = ["family", "manager", "dietitian", "exercise", "counselor", "aide", "physician"];
         for (const roleKey of roles) { await db.insert(schema.patientTeamRoles).values({ patientId: "patient-zero", roleKey }); }
+        const rows = await db.select().from(schema.patientTeamRoles).orderBy(asc(schema.patientTeamRoles.id));
+        return { pairs: rows.map((r) => ({ patientId: r.patientId, roleKey: r.roleKey })) };
+      }
+      const pzRoles = new Set(existing.filter((r) => r.patientId === "patient-zero").map((r) => r.roleKey));
+      if (!pzRoles.has("counselor") && !pzRoles.has("physician")) {
+        for (const roleKey of ["counselor", "physician"]) { await db.insert(schema.patientTeamRoles).values({ patientId: "patient-zero", roleKey }); }
         const rows = await db.select().from(schema.patientTeamRoles).orderBy(asc(schema.patientTeamRoles.id));
         return { pairs: rows.map((r) => ({ patientId: r.patientId, roleKey: r.roleKey })) };
       }
@@ -1712,6 +1731,75 @@ export const Actions = {
           return { id: r.id, clientName: r.clientName, packageLabel: r.packageLabel, packagePrice: r.packagePrice, services, note: r.note, createdAt: r.createdAt.toISOString() };
         }),
       };
+    },
+  }),
+  listCatchupEntries: defineAction({
+    description: "Lists catch-up entries from the Catch-up entries page （补录中心）: missed entries filed in one central place — patient, type (prescription, lab report, daily care sheet, exercise / nutrition / sleep / brain-training record, assessment form, physician's written opinion, other), the date the entry belongs to (may be in the past), the service/area it links to, an optional uploaded file, a short note, and who entered it. The destination screens read these same rows filtered by link area, so a filed item also appears in its proper place — one record, never a copy.",
+    request: z.object({}),
+    response: z.object({
+      entries: z.array(z.object({
+        id: z.number(), patientId: z.string(), entryType: z.string(), belongsDate: z.string(),
+        linkArea: z.string(), note: z.string(), fileUrl: z.string().nullable(),
+        fileName: z.string(), fileKind: z.string(), enteredBy: z.string(), createdAt: z.string(),
+      })),
+    }),
+    async handler(ctx) {
+      const db = ctx.db<typeof schema>();
+      const rows = await db.select().from(schema.catchupEntries).orderBy(desc(schema.catchupEntries.id)).limit(200);
+      return {
+        entries: await Promise.all(rows.map(async (r) => ({
+          id: r.id, patientId: r.patientId, entryType: r.entryType, belongsDate: r.belongsDate,
+          linkArea: r.linkArea, note: r.note,
+          fileUrl: r.fileKey && r.fileKind === "photo" ? await ctx.blobs.getUrl(r.fileKey) : null,
+          fileName: r.fileName, fileKind: r.fileKind, enteredBy: r.enteredBy,
+          createdAt: r.createdAt.toISOString(),
+        }))),
+      };
+    },
+  }),
+
+  saveCatchupEntry: defineAction({
+    description: "Files one catch-up entry in the Catch-up entries page （补录中心）: the patient it belongs to, what it is, the date the entry belongs to (today or any earlier date — this page exists for missed entries), the service/area it links to so it also shows in its proper place, a short note, who entered it, and optionally one uploaded file — a JPG/PNG photo, a PDF file, or an Excel file, stored as an owned blob and kept attached to the entry.",
+    request: z.object({
+      patientId: z.string().max(40).default(""),
+      entryType: z.enum(["prescription", "lab", "care", "exercise", "nutrition", "sleep", "brain", "assessment", "opinion", "other"]),
+      belongsDate: z.string().min(10).max(10),
+      linkArea: z.enum(["meds", "exercise", "today", "record", "entry"]),
+      note: z.string().max(1000).default(""),
+      upload: uploadShape.nullable().default(null),
+      enteredBy: z.string().max(120).default(""),
+    }),
+    response: z.object({ ok: z.literal(true), id: z.number() }),
+    async handler(ctx, args): Promise<{ ok: true; id: number }> {
+      const db = ctx.db<typeof schema>();
+      let fileKey: string | null = null;
+      let fileName = "";
+      let fileKind = "";
+      if (args.upload) {
+        const stored = await storeUpload(ctx, "catchup-files", args.upload);
+        fileKey = stored.key; fileKind = stored.kind;
+        fileName = args.upload.fileName.trim() || (stored.kind === "photo" ? "补录照片 Catch-up photo" : stored.kind === "pdf" ? "补录文件 PDF Catch-up PDF" : "补录表格 Catch-up spreadsheet");
+      }
+      const inserted = await db.insert(schema.catchupEntries).values({
+        patientId: args.patientId, entryType: args.entryType, belongsDate: args.belongsDate,
+        linkArea: args.linkArea, note: args.note, fileKey, fileName, fileKind, enteredBy: args.enteredBy,
+      }).returning({ id: schema.catchupEntries.id });
+      ctx.invalidateQueries();
+      return { ok: true as const, id: inserted[0]?.id ?? 0 };
+    },
+  }),
+
+  deleteCatchupEntry: defineAction({
+    description: "Removes one catch-up entry (and its uploaded file) from the Catch-up entries page.",
+    request: z.object({ id: z.number().int().positive() }),
+    response: z.object({ ok: z.literal(true) }),
+    async handler(ctx, args): Promise<{ ok: true }> {
+      const db = ctx.db<typeof schema>();
+      const existing = (await db.select().from(schema.catchupEntries).where(eq(schema.catchupEntries.id, args.id)))[0];
+      if (existing?.fileKey) { await ctx.blobs.delete(existing.fileKey); }
+      await db.delete(schema.catchupEntries).where(eq(schema.catchupEntries.id, args.id));
+      ctx.invalidateQueries();
+      return { ok: true as const };
     },
   }),
 } satisfies ActionsModule;

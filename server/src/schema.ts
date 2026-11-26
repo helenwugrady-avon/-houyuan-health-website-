@@ -350,6 +350,30 @@ export const patientTeamRoles = sqliteTable("patient_team_roles", {
   roleKey: text("role_key").notNull(),
 });
 
+/* ---- Catch-up entries 补录中心 (2026-11-26) ----
+   One central place to file a missed entry: patient, what it is, the date
+   it BELONGS to (may be in the past), the service/area it links to, one
+   uploaded file (photo / PDF / Excel, stored as an owned blob), a short
+   note, and who entered it. The row is the single record — the destination
+   screens (Medications & Labs, Exercise & Brain, Today, Record, Staff
+   entry) read the same rows filtered by link_area, so an item filed here
+   also shows in its proper place without ever being copied. */
+export const catchupEntries = sqliteTable("catchup_entries", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  patientId: text("patient_id").notNull().default(""),
+  entryType: text("entry_type").notNull(),
+  belongsDate: text("belongs_date").notNull(),
+  linkArea: text("link_area").notNull(),
+  note: text("note").notNull().default(""),
+  fileKey: text("file_key"),
+  fileName: text("file_name").notNull().default(""),
+  fileKind: text("file_kind").notNull().default(""),
+  enteredBy: text("entered_by").notNull().default(""),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
 export const staffEntries = sqliteTable("staff_entries", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   patientId: text("patient_id").notNull(),
