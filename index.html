@@ -1906,10 +1906,10 @@ function renderHandover(){
  if(CLOSED["handover"]){ sec.style.display="none"; return; }
  sec.style.display=""; sec.style.position="relative";
  var items=[
-  [T("技术文档","Technical Documentation"),T("系统结构、数据模型、角色权限、工作流程。完整 Word 版（36 页）在 Google Drive「Data management website」文件夹；本页下方按钮可下载摘要。","Full Word version (36 pages) in Google Drive, folder “Data management website”; the summary downloads from the button below.")],
-  [T("网站地图","Website Sitemap"),T("每个页面和表单在哪里（PDF，7 页）。向 Helen 索取此文件。","Every page and form, and where it lives (PDF, 7 pages). Ask Helen for this file.")],
-  [T("数据结构","Data Structure"),T("所有表格和字段的定义。向 Helen 索取此文件。","Definitions of every table and field. Ask Helen for this file.")],
-  [T("数据库图","Database Diagram"),T("表与表之间怎么连接（PDF）。向 Helen 索取此文件。","How the tables connect (PDF). Ask Helen for this file.")],
+  [T("技术文档","Technical Documentation"),T("系统结构、数据模型、角色权限、工作流程。完整 Word 版（v1.3，44 页）在 Google Drive「Jiang → Handover files」文件夹；本页下方按钮可下载摘要。","Full Word version (v1.3, 44 pages) in Google Drive, folder “Jiang → Handover files”; the summary downloads from the button below.")],
+  [T("网站地图","Website Sitemap"),T("每个页面和表单在哪里（PDF，8 页），在 Google Drive「Jiang → Handover files」文件夹。","Every page and form, and where it lives (PDF, 8 pages), in Google Drive, folder “Jiang → Handover files”.")],
+  [T("数据结构","Data Structure"),T("所有表格和字段的定义。在 Google Drive「Jiang → Handover files」文件夹。","Definitions of every table and field. In Google Drive, folder “Jiang → Handover files”.")],
+  [T("数据库图","Database Diagram"),T("表与表之间怎么连接（PDF），在 Google Drive「Jiang → Handover files」文件夹。","How the tables connect (PDF), in Google Drive, folder “Jiang → Handover files”.")],
   [T("价格对照表","Price–Service Mapping"),T("每项服务对应哪个价格。在 Google Drive「Finance」文件夹。","Every service matched to its price. In Google Drive, folder “Finance”.")]
  ];
  sec.innerHTML='<button type="button" class="dismiss-x" data-dismiss="handover" aria-label="'+T("关闭这段说明","Close these instructions")+'" title="'+T("关闭这段说明","Close these instructions")+'">✕</button>'
@@ -1922,8 +1922,7 @@ function renderHandover(){
   +"</ul>"
   +'<div style="display:flex;flex-wrap:wrap;gap:.5rem"><button type="button" class="btn" id="dl-techdoc">'+T("下载技术文档摘要","Download tech doc summary")+'</button><button type="button" class="btn" id="dl-checklist">'+T("下载交接清单","Download handover checklist")+"</button></div>"
   +'<p style="margin:.6rem 0 0;font-size:.85rem;color:var(--dim)">'+T("想把本页存成纸质或 PDF：请在浏览器里打开本页后用浏览器的打印功能。","To print this page or save it as a PDF, open it in your browser and use the browser's Print command.")+"</p>"
-  +'<p style="margin:.7rem 0 0;font-size:.85rem;color:var(--dim)">'+T("完整版 Word 技术文档（YH-TECH-001）已经在 Google Drive 的「Data management website」文件夹里，文件名是 ","The full Word technical document (YH-TECH-001) is already in the Google Drive “Data management website” folder, as ")+"<strong>Houyuan Health Technical Documentation_MUSE.docx</strong>"+T("，团队可以直接从那里取。"," — the team can take it from there.")+"</p>"
-  +'<p style="margin:.5rem 0 0;font-size:.85rem;color:var(--dim)">'+T("这些交接文件也正在为 Helen 另存一份到 Google Drive 的「Jiang」文件夹里，新建一个「web info」子文件夹放进去。","Copies of these handover files are also being saved for Helen in Google Drive — in a new “web info” subfolder inside the “Jiang” folder.")+"</p>";
+  +'<p style="margin:.7rem 0 0;font-size:.85rem;color:var(--dim)">'+T("完整版 Word 技术文档（YH-TECH-001）和其他交接文件都在 Google Drive 的「Jiang → Handover files」文件夹里，团队可以直接从那里取。","The full Word technical document (YH-TECH-001) and the other handover files are all in the Google Drive “Jiang → Handover files” folder — the team can take them from there.")+"</p>";
 }
 function buildViewerOptions(){
  var sel=document.getElementById("viewer-role"); if(!sel)return;
@@ -1957,8 +1956,8 @@ function renderHeaderText(){
  buildViewerOptions(); syncRoleText();
  var wb=document.getElementById("welcome-body");
  if(wb)wb.innerHTML='<p style="font-weight:700;color:var(--teal);margin:0">'+T("欢迎使用","Welcome")+'</p><ul class="tight" style="font-size:.92rem">'
-  +"<li>"+T("前三个标签是日常照护：「今日」24 小时清单、「运动与认知」、「用药与化验」—— 正式版中都能填、能存；只读副本中只能看。","The first three tabs are daily care — Today, Exercise &amp; Brain, Medications &amp; Labs — fillable and saved in the live version; view-only here.")+"</li>"
-  +"<li>"+T("看板上方有「我的今天」：先看自己的任务；医生的任务分「看诊 / 管理」两张清单。","My day sits at the top of the Dashboard — your own tasks first, with a physician's patient-care and administration lists kept separate.")+"</li>"
+  +"<li>"+T("日常照护在「今日」「运动与认知」「用药与化验」三个标签里 —— 正式版中都能填、能存；只读副本中只能看。","Daily care lives in three tabs — Today, Exercise &amp; Brain, Medications &amp; Labs — fillable and saved in the live version; view-only here.")+"</li>"
+  +"<li>"+T("看板上方有「我的今天」：先看自己的任务。","My day sits at the top of the Dashboard — your own tasks first.")+"</li>"
   +"<li>"+T("「团队录入 → 价格」可以给客户选套餐和单项服务、看合计；正式版中还能保存客户的选择。","Staff entry → Pricing: choose a package and services for a client and see the total; the live version also saves the choice.")+"</li>"
   +"<li>"+T("「资源」页按六大支柱整理了患者教育内容；「工作进展」是整个项目的共享进度。","Resources holds patient education by the six pillars; Work Progress tracks the whole project.")+"</li>"
   +"<li>"+T("顶部按人名切换查看身份；「患者列表 → 团队成员」里每个人分一个角色、负责一位患者，在患者档案里勾选团队角色就会带来那个角色的任务。","Switch the viewer by person at the top; under Patients → Team members each person holds one role for one patient, and ticking a patient's team roles brings that role's tasks.")+"</li>"
@@ -2093,7 +2092,7 @@ function downloadText(filename, text){
 var TECHDOC_SUMMARY = [
 "Houyuan Health — Technical Documentation (Summary)",
 "院后健康 Houyuan Health 技术文档摘要",
-"Full document: YH-TECH-001 v1.0, 36 pages (Word) — in Google Drive, folder “Data management website”, file: Houyuan Health Technical Documentation_MUSE.docx",
+"Full document: YH-TECH-001 v1.3, 44 pages (Word) — in Google Drive, folder \"Jiang → Handover files\", file: Houyuan Health Technical Documentation_MUSE.docx",
 "",
 "1. What the system is",
 "A chronic-disease management data platform for Houyuan Health, built around lifestyle medicine's six pillars: nutrition, physical activity, sleep, stress management, social connectedness, and avoiding risky substances. A senior-care module uses the same structure, with Helen's father as Patient Zero (the first example patient).",
@@ -2101,23 +2100,24 @@ var TECHDOC_SUMMARY = [
 "2. Architecture",
 "- Patient app (planned as a WeChat mini-program for China) for daily logging and check-ins.",
 "- Team / staff side for the care team: dashboard, patient records, staff entry, medications & labs.",
+"- Catch-up centre (补录中心): a late or missed entry is filed once, with its real date, and lands in its proper record.",
 "- Public outcomes page with aggregate results only (no individual data).",
 "- Production version to be built and hosted in China, with real patient data staying in China.",
 "",
 "3. Data model",
-"16 entities covering patients, care teams and roles, tasks, daily logs, food/activity records, medications, lab results, assessments, consent, audit logs, and pricing. Every patient has their own team: roles are chosen per patient, each role brings its own tasks, and a named person is assigned to each role. Family is one of the role options and sees the complete picture through the Family Portal.",
+"17 entities covering patients, care teams and roles, tasks, daily logs, food/activity records, medications, lab results, assessments, consent, audit logs, pricing, and catch-up entries. Every patient has their own team: roles are chosen per patient, each role brings its own tasks, and a named person is assigned to each role. Family is one of the role options and sees the complete picture through the Family Portal.",
 "",
 "4. Data sources",
-"10 data sources (device/body-composition measures, labs, home monitoring, patient logs, staff entry, and more) unified by 4 rules. See the Data Structure document and the Database Diagram for the full field lists.",
+"10 data sources (device/body-composition measures, labs, home monitoring, patient logs, staff entry, and more) unified by 4 rules. See the Data Structure document (v4) and the Database Diagram for the full field lists.",
 "",
 "5. Roles & permissions",
-"14 roles (physician, dietitian, exercise specialist, counselor, health coach / case manager, nurse, aide 护工， family, front desk, admin, and others). Need-to-know visibility: each role sees only what its work requires. Every entry records who did it. The aide ticks off daily care and doses but does not upload files; family and care-team members can upload prescriptions and lab reports (photo, PDF, or Excel — one attachment spot per entry).",
+"10 roles from the MDT organisation files: platform lead (平台总负责人), health manager / case manager (健康管理师), sales consultant (销售顾问), records clerk (档案录入员), dietitian (营养师), exercise rehabilitation therapist (运动康复师), counsellor (心理咨询师), consulting physician (合作会诊医师 — external, never logs in; the records clerk files their written opinions), life butler (生活管家), and family (家属). Need-to-know visibility: each role sees only what its work requires. Every entry records who did it. The life butler ticks off daily care and doses but does not upload files; family and care-team members can upload prescriptions and lab reports (photo, PDF, or Excel — one attachment spot per entry).",
 "",
 "6. Key workflows",
-"Patient joins with consent → team and roles assigned → daily care and logging → weekly summary for the health manager (Sunday night) → follow-up and plan adjustment → reports (daily view, weekly summary, standing progress, medications & labs, visit reports, public outcomes).",
+"Patient joins with consent → team and roles assigned → daily care and logging → weekly summary for the health manager (Sunday night) → follow-up and plan adjustment → reports (daily view, weekly summary, standing progress, medications & labs, visit reports, public outcomes). A red-status patient is reviewed by the MDT within 48 hours.",
 "",
 "7. Safety & China compliance (to verify with counsel)",
-"Consent centre, audit log, role-based access, PIPL / Data Security Law / Cybersecurity Law, MLPS 2.0 (等保） Level 3, ICP filing （备案）. All compliance items are marked for verification by Chinese counsel before launch.",
+"Consent centre, audit log, role-based access, PIPL / Data Security Law / Cybersecurity Law, MLPS 2.0 (等保) Level 3, ICP filing (备案). All compliance items are marked for verification by Chinese counsel before launch.",
 "",
 "8. Calculations used",
 "150-minute weekly activity goal (moderate + vigorous minutes, talk test for intensity); AHA added-sugar limits (women/children ≤25 g/day, men ≤36 g/day); AHA sodium (~2,300 mg/day general, <1,500 mg/day for chronic disease / hypertension); protein per kg of body weight. Note: a source sheet's figure 'protein energy 6,820 kcal' is a known error — 84 g protein × 4 kcal/g = 336 kcal; the website calculator uses the correct formula.",
@@ -2138,13 +2138,13 @@ var HANDOVER_CHECKLIST = [
 "[ ] This checklist and the Technical Documentation summary (download buttons on the page).",
 "",
 "In Google Drive:",
-"[ ] Full Technical Documentation (Word, 36 pages) — Drive folder “Data management website”, file: Houyuan Health Technical Documentation_MUSE.docx",
-"[ ] Website Sitemap (PDF, 7 pages) — which screen each form lives on. Ask Helen for this file.",
-"[ ] Data Structure document — every table and field. Ask Helen for this file.",
-"[ ] Database Diagram (PDF) — how the tables connect. Ask Helen for this file.",
-"[ ] Price–Service Mapping spreadsheet — folder “Finance”; every service matched to its decided price, with the open price questions listed.",
-"[ ] Daily 24-Hour Care Checklist (Word + PDF) — folder “Checklists”.",
-"[ ] Roadmap Tracker spreadsheet — folder “Management”; fill in the Week 1 start date in cell B1.",
+"[ ] Full Technical Documentation (Word, 44 pages, v1.3) — Drive folder \"Jiang → Handover files\", file: Houyuan Health Technical Documentation_MUSE.docx",
+"[ ] Website Sitemap (PDF, 8 pages) — which screen each form lives on. In Drive folder \"Jiang → Handover files\".",
+"[ ] Data Structure document (v4) — every table and field. In Drive folder \"Jiang → Handover files\".",
+"[ ] Database Diagram (PDF) — how the tables connect. In Drive folder \"Jiang → Handover files\".",
+"[ ] Price–Service Mapping spreadsheet — folder \"Finance\"; every service matched to its decided price, with the open price questions listed.",
+"[ ] Daily 24-Hour Care Checklist (Word + PDF) — folder \"Checklists\".",
+"[ ] Roadmap Tracker spreadsheet — folder \"Management\"; fill in the Week 1 start date in cell B1.",
 "",
 "Waiting on Helen / the family:",
 "[ ] Father's medication list.",
