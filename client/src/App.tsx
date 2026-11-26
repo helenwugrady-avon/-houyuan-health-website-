@@ -4592,6 +4592,138 @@ function CatchupTab({ patients, viewerRole, viewerName, go }: { patients: Patien
   );
 }
 
+/* ================= Handover downloads =================
+   The two texts the header handover section's buttons download, generated
+   in the browser — nothing is sent anywhere. Texts updated 2026-11-26 to
+   match the current handover documents: tech doc YH-TECH-001 v1.3
+   (44 pages), sitemap 8 pages, data structure v4 — all in Google Drive,
+   folder "Jiang → Handover files". */
+function downloadTextFile(filename: string, text: string) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+const TECHDOC_SUMMARY = [
+  "Houyuan Health — Technical Documentation (Summary)",
+  "院后健康 Houyuan Health 技术文档摘要",
+  "Full document: YH-TECH-001 v1.3, 44 pages (Word) — in Google Drive, folder \"Jiang → Handover files\", file: Houyuan Health Technical Documentation_MUSE.docx",
+  "",
+  "1. What the system is",
+  "A chronic-disease management data platform for Houyuan Health, built around lifestyle medicine's six pillars: nutrition, physical activity, sleep, stress management, social connectedness, and avoiding risky substances. A senior-care module uses the same structure, with Helen's father as Patient Zero (the first example patient).",
+  "",
+  "2. Architecture",
+  "- Patient app (planned as a WeChat mini-program for China) for daily logging and check-ins.",
+  "- Team / staff side for the care team: dashboard, patient records, staff entry, medications & labs.",
+  "- Catch-up centre (补录中心): a late or missed entry is filed once, with its real date, and lands in its proper record.",
+  "- Public outcomes page with aggregate results only (no individual data).",
+  "- Production version to be built and hosted in China, with real patient data staying in China.",
+  "",
+  "3. Data model",
+  "17 entities covering patients, care teams and roles, tasks, daily logs, food/activity records, medications, lab results, assessments, consent, audit logs, pricing, and catch-up entries. Every patient has their own team: roles are chosen per patient, each role brings its own tasks, and a named person is assigned to each role. Family is one of the role options and sees the complete picture through the Family Portal.",
+  "",
+  "4. Data sources",
+  "10 data sources (device/body-composition measures, labs, home monitoring, patient logs, staff entry, and more) unified by 4 rules. See the Data Structure document (v4) and the Database Diagram for the full field lists.",
+  "",
+  "5. Roles & permissions",
+  "10 roles from the MDT organisation files: platform lead (平台总负责人), health manager / case manager (健康管理师), sales consultant (销售顾问), records clerk (档案录入员), dietitian (营养师), exercise rehabilitation therapist (运动康复师), counsellor (心理咨询师), consulting physician (合作会诊医师 — external, never logs in; the records clerk files their written opinions), life butler (生活管家), and family (家属). Need-to-know visibility: each role sees only what its work requires. Every entry records who did it. The life butler ticks off daily care and doses but does not upload files; family and care-team members can upload prescriptions and lab reports (photo, PDF, or Excel — one attachment spot per entry).",
+  "",
+  "6. Key workflows",
+  "Patient joins with consent → team and roles assigned → daily care and logging → weekly summary for the health manager (Sunday night) → follow-up and plan adjustment → reports (daily view, weekly summary, standing progress, medications & labs, visit reports, public outcomes). A red-status patient is reviewed by the MDT within 48 hours.",
+  "",
+  "7. Safety & China compliance (to verify with counsel)",
+  "Consent centre, audit log, role-based access, PIPL / Data Security Law / Cybersecurity Law, MLPS 2.0 (等保) Level 3, ICP filing (备案). All compliance items are marked for verification by Chinese counsel before launch.",
+  "",
+  "8. Calculations used",
+  "150-minute weekly activity goal (moderate + vigorous minutes, talk test for intensity); AHA added-sugar limits (women/children ≤25 g/day, men ≤36 g/day); AHA sodium (~2,300 mg/day general, <1,500 mg/day for chronic disease / hypertension); protein per kg of body weight. Note: a source sheet's figure 'protein energy 6,820 kcal' is a known error — 84 g protein × 4 kcal/g = 336 kcal; the website calculator uses the correct formula.",
+  "",
+  "9. Still open (next steps)",
+  "- Helen's father's medication list and blood-work schedule — to be provided.",
+  "- Week 1 start date for the 26-week roadmap — to be filled in.",
+  "- Day 0 baseline measurements — to be measured.",
+  "- Care-team names — empty slots to fill in.",
+  "- Per-person login — planned for a later version.",
+  "",
+].join("\n");
+
+const HANDOVER_CHECKLIST = [
+  "Houyuan Health — Handover Checklist 交接清单",
+  "",
+  "Share with the team:",
+  "[ ] The view-only link to this prototype (one link for everyone).",
+  "[ ] This checklist and the Technical Documentation summary (download buttons on the page).",
+  "",
+  "In Google Drive:",
+  "[ ] Full Technical Documentation (Word, 44 pages, v1.3) — Drive folder \"Jiang → Handover files\", file: Houyuan Health Technical Documentation_MUSE.docx",
+  "[ ] Website Sitemap (PDF, 8 pages) — which screen each form lives on. In Drive folder \"Jiang → Handover files\".",
+  "[ ] Data Structure document (v4) — every table and field. In Drive folder \"Jiang → Handover files\".",
+  "[ ] Database Diagram (PDF) — how the tables connect. In Drive folder \"Jiang → Handover files\".",
+  "[ ] Price–Service Mapping spreadsheet — folder \"Finance\"; every service matched to its decided price, with the open price questions listed.",
+  "[ ] Daily 24-Hour Care Checklist (Word + PDF) — folder \"Checklists\".",
+  "[ ] Roadmap Tracker spreadsheet — folder \"Management\"; fill in the Week 1 start date in cell B1.",
+  "",
+  "Waiting on Helen / the family:",
+  "[ ] Father's medication list.",
+  "[ ] Father's blood-work schedule.",
+  "[ ] Week 1 start date.",
+  "[ ] Day 0 baseline measurements.",
+  "[ ] Care-team names for the empty slots.",
+  "[ ] Test data from the equipment (Excel preferred) to check against the 10-source format.",
+  "",
+  "For the China build team:",
+  "[ ] Build and host in China; real patient data stays in China.",
+  "[ ] Verify all compliance items with Chinese counsel (PIPL, ICP filing, MLPS 2.0 Level 3).",
+  "[ ] Patient app as a WeChat mini-program.",
+  "[ ] Per-person login with role-based, need-to-know access.",
+  "",
+].join("\n");
+
+/* The handover section in the header: the handover package list and the
+   two download buttons. Closable like the other instruction boxes (it is
+   not a safety warning); closing it hides it for this visit only. */
+function HandoverSection() {
+  const [open, setOpen] = useState(true);
+  if (!open) return null;
+  const items: [string, string][] = [
+    [T("技术文档", "Technical Documentation"), T("系统结构、数据模型、角色权限、工作流程。完整 Word 版（v1.3，44 页）在 Google Drive「Jiang → Handover files」文件夹；本页下方按钮可下载摘要。", "Full Word version (v1.3, 44 pages) in Google Drive, folder “Jiang → Handover files”; the summary downloads from the button below.")],
+    [T("网站地图", "Website Sitemap"), T("每个页面和表单在哪里（PDF，8 页），在 Google Drive「Jiang → Handover files」文件夹。", "Every page and form, and where it lives (PDF, 8 pages), in Google Drive, folder “Jiang → Handover files”.")],
+    [T("数据结构", "Data Structure"), T("所有表格和字段的定义（v4）。在 Google Drive「Jiang → Handover files」文件夹。", "Definitions of every table and field (v4). In Google Drive, folder “Jiang → Handover files”.")],
+    [T("数据库图", "Database Diagram"), T("表与表之间怎么连接（PDF），在 Google Drive「Jiang → Handover files」文件夹。", "How the tables connect (PDF), in Google Drive, folder “Jiang → Handover files”.")],
+    [T("价格对照表", "Price–Service Mapping"), T("每项服务对应哪个价格。在 Google Drive「Finance」文件夹。", "Every service matched to its price. In Google Drive, folder “Finance”.")],
+  ];
+  return (
+    <section aria-label={T("给团队的交接", "Handover for your team")} className="relative mt-3 rounded-xl bg-[var(--surface)] p-4 text-[var(--text)]">
+      <button
+        type="button"
+        aria-label={T("关闭这段说明", "Close these instructions")}
+        title={T("关闭这段说明", "Close these instructions")}
+        onClick={() => setOpen(false)}
+        className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] text-sm font-bold leading-none text-[var(--dim)]"
+      >
+        ✕
+      </button>
+      <h2 className="pr-8 text-base font-bold" style={{ color: TEAL }}>{T("给团队的交接", "For your team — handover")}</h2>
+      <p className="mt-1 text-sm font-semibold">{T("交接资料包 — 团队需要的文件，以及每个文件在哪里", "Handover package — the files your team needs, and where each one is")}</p>
+      <ul className="mt-1 space-y-1 text-sm">
+        {items.map(([name, desc]) => (
+          <li key={name}><strong>{name}</strong> — {desc}</li>
+        ))}
+      </ul>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button type="button" className="rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: TEAL }} onClick={() => downloadTextFile("Houyuan-Health-Technical-Documentation-Summary.txt", TECHDOC_SUMMARY)}>{T("下载技术文档摘要", "Download tech doc summary")}</button>
+        <button type="button" className="rounded-lg px-4 py-2 text-sm font-semibold text-white" style={{ background: TEAL }} onClick={() => downloadTextFile("Houyuan-Health-Handover-Checklist.txt", HANDOVER_CHECKLIST)}>{T("下载交接清单", "Download handover checklist")}</button>
+      </div>
+      <p className="mt-2 text-xs text-[var(--dim)]">{T("完整版 Word 技术文档（YH-TECH-001）和其他交接文件都在 Google Drive 的「Jiang → Handover files」文件夹里，团队可以直接从那里取。", "The full Word technical document (YH-TECH-001) and the other handover files are all in the Google Drive “Jiang → Handover files” folder — the team can take them from there.")}</p>
+    </section>
+  );
+}
+
 /* ================= App shell ================= */
 const TABS = [
   { hash: "today", zh: "今日", en: "Today" },
@@ -4704,6 +4836,7 @@ export function App() {
               ))}
             </div>
           </div>
+          <HandoverSection />
           <div className="mt-3 rounded-lg bg-white/10 p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <label htmlFor="viewer-role" className="font-semibold">{T("查看身份", "Viewing as")}</label>
@@ -4742,8 +4875,8 @@ export function App() {
               <div>
                 <p className="font-bold" style={{ color: TEAL }}>{T("欢迎使用", "Welcome")}</p>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-                  <li>{T("前三个标签是日常照护：「今日」24 小时清单、「运动与认知」、「用药与化验」，都能填、能存。", "The first three tabs are daily care — Today, Exercise & Brain, Medications & Labs — all fillable and saved.")}</li>
-                  <li>{T("看板上方有「我的今天」：先看自己的任务；医生的任务分「看诊 / 管理」两张清单。", "My day sits at the top of the Dashboard — your own tasks first, with a physician's patient-care and administration lists kept separate.")}</li>
+                  <li>{T("日常照护在「今日」「运动与认知」「用药与化验」三个标签里，都能填、能存。", "Daily care lives in three tabs — Today, Exercise & Brain, Medications & Labs — all fillable and saved.")}</li>
+                  <li>{T("看板上方有「我的今天」：先看自己的任务。", "My day sits at the top of the Dashboard — your own tasks first.")}</li>
                   <li>{T("「团队录入 → 价格」可以给客户选套餐和单项服务、看合计，并保存客户的选择。", "Staff entry → Pricing: choose a package and services for a client, see the total, and save the choice.")}</li>
                   <li>{T("「资源」页按六大支柱整理了患者教育内容；「工作进展」是整个项目的共享进度。", "Resources holds patient education by the six pillars; Work Progress tracks the whole project.")}</li>
                   <li>{T("顶部按人名切换查看身份；「患者列表 → 团队成员」里每个人分一个角色、负责一位患者，在患者档案里勾选团队角色就会带来那个角色的任务。", "Switch the viewer by person at the top; under Patients → Team members each person holds one role for one patient, and ticking a patient's team roles brings that role's tasks.")}</li>

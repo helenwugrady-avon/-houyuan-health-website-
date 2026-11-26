@@ -73,6 +73,44 @@
       ],
       "format": "esm"
     },
+    "../node_modules/@hatch/space-sdk/dist/server-contract.js": {
+      "bytes": 4743,
+      "imports": [
+        {
+          "path": "../node_modules/zod/index.js",
+          "kind": "import-statement",
+          "original": "zod"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@hatch/space-sdk/dist/saved_product_lists.js": {
+      "bytes": 4095,
+      "imports": [
+      ],
+      "format": "esm"
+    },
+    "../node_modules/@hatch/space-sdk/dist/saved_products_action.js": {
+      "bytes": 15088,
+      "imports": [
+        {
+          "path": "../node_modules/drizzle-orm/index.js",
+          "kind": "import-statement",
+          "original": "drizzle-orm"
+        },
+        {
+          "path": "../node_modules/@hatch/space-sdk/dist/saved_product_lists.js",
+          "kind": "import-statement",
+          "original": "./saved_product_lists"
+        },
+        {
+          "path": "../node_modules/@hatch/space-sdk/dist/server-contract.js",
+          "kind": "import-statement",
+          "original": "./server-contract"
+        }
+      ],
+      "format": "esm"
+    },
     "../node_modules/drizzle-orm/column.js": {
       "bytes": 1311,
       "imports": [
@@ -170,40 +208,18 @@
       ],
       "format": "esm"
     },
-    "../node_modules/@hatch/space-sdk/dist/server-contract.js": {
-      "bytes": 4743,
+    "../node_modules/zod/index.js": {
+      "bytes": 121,
       "imports": [
         {
-          "path": "../node_modules/zod/index.js",
+          "path": "../node_modules/zod/v4/classic/external.js",
           "kind": "import-statement",
-          "original": "zod"
-        }
-      ],
-      "format": "esm"
-    },
-    "../node_modules/@hatch/space-sdk/dist/saved_product_lists.js": {
-      "bytes": 4095,
-      "imports": [
-      ],
-      "format": "esm"
-    },
-    "../node_modules/@hatch/space-sdk/dist/saved_products_action.js": {
-      "bytes": 15088,
-      "imports": [
-        {
-          "path": "../node_modules/drizzle-orm/index.js",
-          "kind": "import-statement",
-          "original": "drizzle-orm"
+          "original": "./v4/classic/external.js"
         },
         {
-          "path": "../node_modules/@hatch/space-sdk/dist/saved_product_lists.js",
+          "path": "../node_modules/zod/v4/classic/external.js",
           "kind": "import-statement",
-          "original": "./saved_product_lists"
-        },
-        {
-          "path": "../node_modules/@hatch/space-sdk/dist/server-contract.js",
-          "kind": "import-statement",
-          "original": "./server-contract"
+          "original": "./v4/classic/external.js"
         }
       ],
       "format": "esm"
@@ -245,22 +261,6 @@
           "path": "../node_modules/drizzle-orm/table.js",
           "kind": "import-statement",
           "original": "../table.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "../node_modules/zod/index.js": {
-      "bytes": 121,
-      "imports": [
-        {
-          "path": "../node_modules/zod/v4/classic/external.js",
-          "kind": "import-statement",
-          "original": "./v4/classic/external.js"
-        },
-        {
-          "path": "../node_modules/zod/v4/classic/external.js",
-          "kind": "import-statement",
-          "original": "./v4/classic/external.js"
         }
       ],
       "format": "esm"
@@ -390,6 +390,54 @@
           "kind": "import-statement",
           "original": "./common.js"
         }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/drizzle-orm/sqlite-core/columns/all.js": {
+      "bytes": 419,
+      "imports": [
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/blob.js",
+          "kind": "import-statement",
+          "original": "./blob.js"
+        },
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/custom.js",
+          "kind": "import-statement",
+          "original": "./custom.js"
+        },
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/integer.js",
+          "kind": "import-statement",
+          "original": "./integer.js"
+        },
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/numeric.js",
+          "kind": "import-statement",
+          "original": "./numeric.js"
+        },
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/real.js",
+          "kind": "import-statement",
+          "original": "./real.js"
+        },
+        {
+          "path": "../node_modules/drizzle-orm/sqlite-core/columns/text.js",
+          "kind": "import-statement",
+          "original": "./text.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/drizzle-orm/version.js": {
+      "bytes": 150,
+      "imports": [
+      ],
+      "format": "esm"
+    },
+    "../node_modules/drizzle-orm/tracing-utils.js": {
+      "bytes": 113,
+      "imports": [
       ],
       "format": "esm"
     },
@@ -547,54 +595,6 @@
           "kind": "import-statement",
           "original": "./common.js"
         }
-      ],
-      "format": "esm"
-    },
-    "../node_modules/drizzle-orm/sqlite-core/columns/all.js": {
-      "bytes": 419,
-      "imports": [
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/blob.js",
-          "kind": "import-statement",
-          "original": "./blob.js"
-        },
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/custom.js",
-          "kind": "import-statement",
-          "original": "./custom.js"
-        },
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/integer.js",
-          "kind": "import-statement",
-          "original": "./integer.js"
-        },
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/numeric.js",
-          "kind": "import-statement",
-          "original": "./numeric.js"
-        },
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/real.js",
-          "kind": "import-statement",
-          "original": "./real.js"
-        },
-        {
-          "path": "../node_modules/drizzle-orm/sqlite-core/columns/text.js",
-          "kind": "import-statement",
-          "original": "./text.js"
-        }
-      ],
-      "format": "esm"
-    },
-    "../node_modules/drizzle-orm/version.js": {
-      "bytes": 150,
-      "imports": [
-      ],
-      "format": "esm"
-    },
-    "../node_modules/drizzle-orm/tracing-utils.js": {
-      "bytes": 113,
-      "imports": [
       ],
       "format": "esm"
     },
@@ -805,6 +805,28 @@
       ],
       "format": "esm"
     },
+    "../node_modules/zod/v4/core/to-json-schema.js": {
+      "bytes": 17006,
+      "imports": [
+        {
+          "path": "../node_modules/zod/v4/core/registries.js",
+          "kind": "import-statement",
+          "original": "./registries.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "../node_modules/zod/v4/core/util.js": {
+      "bytes": 22018,
+      "imports": [
+        {
+          "path": "../node_modules/zod/v4/core/core.js",
+          "kind": "import-statement",
+          "original": "./core.js"
+        }
+      ],
+      "format": "esm"
+    },
     "../node_modules/zod/v4/core/regexes.js": {
       "bytes": 9078,
       "imports": [
@@ -910,31 +932,9 @@
       ],
       "format": "esm"
     },
-    "../node_modules/zod/v4/core/util.js": {
-      "bytes": 22018,
-      "imports": [
-        {
-          "path": "../node_modules/zod/v4/core/core.js",
-          "kind": "import-statement",
-          "original": "./core.js"
-        }
-      ],
-      "format": "esm"
-    },
     "../node_modules/zod/v4/core/core.js": {
       "bytes": 2578,
       "imports": [
-      ],
-      "format": "esm"
-    },
-    "../node_modules/zod/v4/core/to-json-schema.js": {
-      "bytes": 17006,
-      "imports": [
-        {
-          "path": "../node_modules/zod/v4/core/registries.js",
-          "kind": "import-statement",
-          "original": "./registries.js"
-        }
       ],
       "format": "esm"
     },
